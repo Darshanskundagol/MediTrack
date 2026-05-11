@@ -56,7 +56,7 @@ MediTrack is a comprehensive web-based pharmacy inventory management system buil
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/meditrack.git
+   git clone https://github.com/Darshanskundagol/Meditrack.git
    cd meditrack
    ```
 
@@ -198,7 +198,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Authors
 
-- **Your Name** - *Initial work* - [Your GitHub](https://github.com/your-username)
+- **Darshanskundagol** - *Initial work* - [GitHub](https://github.com/Darshanskundagol)
 
 ## 🙏 Acknowledgments
 
