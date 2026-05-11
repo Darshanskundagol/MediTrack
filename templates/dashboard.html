@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Meditrack{% endblock %}
+{% block page_title %}<i class="bi bi-grid-1x2-fill me-2"></i>Dashboard{% endblock %}
+
+{% block content %}
+<!-- KPI Cards -->
+<div class="kpi-grid">
+  <div class="kpi-card kpi-blue">
+    <div class="kpi-icon"><i class="bi bi-archive-fill"></i></div>
+    <div class="kpi-body">
+      <div class="kpi-value">{{ stats.total_batches }}</div>
+      <div class="kpi-label">Total Batches</div>
+    </div>
+    <div class="kpi-sub">{{ stats.total_medicines }} unique SKUs</div>
+  </div>
+  <div class="kpi-card kpi-red">
+    <div class="kpi-icon"><i class="bi bi-exclamation-octagon-fill"></i></div>
+    <div class="kpi-body">
+      <div class="kpi-value">{{ stats.high_risk }}</div>
+      <div class="kpi-label">High Risk</div>
+    </div>
+    <div class="kpi-sub">Immediate attention</div>
+  </div>
+  <div class="kpi-card kpi-orange">
+    <div class="kpi-icon"><i class="bi bi-clock-fill"></i></div>
+    <div class="kpi-body">
+      <div class="kpi-value">{{ stats.expiring_soon }}</div>
+      <div class="kpi-label">Expiring ≤ 90 Days</div>
+    </div>
+    <div class="kpi-sub">Needs rotation</div>
+  </div>
+  <div class="kpi-card kpi-amber">
+    <div class="kpi-icon"><i class="bi bi-graph-down-arrow"></i></div>
+    <div class="kpi-body">
+      <div class="kpi-value">{{ stats.slow_moving }}</div>
+      <div class="kpi-label">Slow Moving</div>
+    </div>
+    <div class="kpi-sub">Low velocity items</div>
+  </div>
+  <div class="kpi-card kpi-green">
+    <div class="kpi-icon"><i class="bi bi-check-circle-fill"></i></div>
+    <div class="kpi-body">
+      <div class="kpi-value">{{ stats.low_risk }}</div>
+      <div class="kpi-label">Low Risk</div>
+    </div>
+    <div class="kpi-sub">Healthy inventory</div>
+  </div>
+  <div class="kpi-card kpi-purple">
+    <div class="kpi-icon"><i class="bi bi-trash3-fill"></i></div>
+    <div class="kpi-body">
+      <div class="kpi-value">{{ "{:,}".format(stats.total_wastage) }}</div>
+      <div class="kpi-label">Est. Wastage Units</div>
+    </div>
+    <div class="kpi-sub">Predicted unsold stock</div>
+  </div>
+</div>
+
+<!-- Charts row -->
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <span class="chart-title">Risk Distribution</span>
+      <span class="chart-badge">Live</span>
+    </div>
+    <canvas id="riskDonut" height="220"></canvas>
+  </div>
+  <div class="chart-card chart-wide">
+    <div class="chart-card-header">
+      <span class="chart-title">Expiry Timeline Distribution</span>
+    </div>
+    <canvas id="expiryBar" height="220"></canvas>
+  </div>
+  <div class="chart-card chart-wide">
+    <div class="chart-card-header">
+      <span class="chart-title">Wastage by Category</span>
+    </div>
+    <canvas id="wastageBar" height="220"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <span class="chart-title">Risk by Category</span>
+    </div>
+    <canvas id="categoryRisk" height="220"></canvas>
+  </div>
+</div>
+
+<!-- Model metrics + high-risk table -->
+<div class="lower-grid">
+  <!-- Model metrics -->
+  <div class="metrics-card">
+    <div class="chart-card-header" style="margin-bottom:1rem">
+      <span class="chart-title"><i class="bi bi-cpu me-1"></i>ML Model Performance</span>
+    </div>
+    {% for name, m in metrics.items() %}
+    <div class="metric-row">
+      <span class="metric-model-name">{{ name }}</span>
+      <div class="metric-bars">
+        <div class="metric-item">
+          <span class="metric-label">Accuracy</span>
+          <div class="metric-bar-wrap"><div class="metric-bar" style="width:{{ (m.accuracy * 100)|round(0) }}%"></div></div>
+          <span class="metric-val">{{ "%.1f"|format(m.accuracy * 100) }}%</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">F1 Score</span>
+          <div class="metric-bar-wrap"><div class="metric-bar f1-bar" style="width:{{ (m.f1 * 100)|round(0) }}%"></div></div>
+          <span class="metric-val">{{ "%.1f"|format(m.f1 * 100) }}%</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Precision</span>
+          <div class="metric-bar-wrap"><div class="metric-bar prec-bar" style="width:{{ (m.precision * 100)|round(0) }}%"></div></div>
+          <span class="metric-val">{{ "%.1f"|format(m.precision * 100) }}%</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- High risk table -->
+  <div class="table-card">
+    <div class="chart-card-header" style="margin-bottom:1rem">
+      <span class="chart-title"><i class="bi bi-exclamation-octagon me-1"></i>Top High-Risk Medicines</span>
+      <a href="{{ url_for('reports.alerts') }}" class="see-all-link">See all <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="table-responsive">
+      <table class="medi-table">
+        <thead>
+          <tr>
+            <th>Medicine</th><th>Category</th><th>Days Left</th><th>Stock</th><th>Risk Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in high_risk_items %}
+          <tr>
+            <td>
+              <div class="med-name">{{ item['Medicine ID'] }}</div>
+              <div class="med-sub">{{ item.get('Medicine Name', '') }}</div>
+            </td>
+            <td><span class="cat-badge">{{ item['Category'] }}</span></td>
+            <td>
+              <span class="days-badge {% if item['Days to Expiry'] <= 30 %}days-critical{% elif item['Days to Expiry'] <= 60 %}days-warn{% else %}days-ok{% endif %}">
+                {{ item['Days to Expiry']|int }} days
+              </span>
+            </td>
+            <td>{{ item['Stock Quantity']|int }}</td>
+            <td>
+              <div class="risk-score-wrap">
+                <div class="risk-score-bar" style="width:{{ item['Expiry Risk Score']|round(0) }}%"></div>
+                <span>{{ item['Expiry Risk Score']|round(1) }}</span>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-center text-muted py-3">No high-risk items found</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const CHART_COLORS = {
+  high: '#EF4444', medium: '#F59E0B', low: '#22C55E',
+  blue: '#3B82F6', purple: '#8B5CF6', teal: '#14B8A6'
+};
+
+async function fetchJSON(url) {
+  const r = await fetch(url);
+  return r.json();
+}
+
+// Risk Donut
+fetchJSON('/api/chart/risk-distribution').then(data => {
+  const labels = Object.keys(data), vals = Object.values(data);
+  const colors = labels.map(l => l.includes('High') ? CHART_COLORS.high : l.includes('Medium') ? CHART_COLORS.medium : CHART_COLORS.low);
+  new Chart(document.getElementById('riskDonut'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderWidth: 3, borderColor: '#0f172a', hoverOffset: 8 }] },
+    options: { cutout: '68%', plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'DM Sans' }, padding: 16 } } } }
+  });
+});
+
+// Expiry Timeline
+fetchJSON('/api/chart/expiry-timeline').then(data => {
+  const bg = ['#EF4444','#F97316','#F59E0B','#22C55E','#3B82F6'];
+  new Chart(document.getElementById('expiryBar'), {
+    type: 'bar',
+    data: { labels: Object.keys(data), datasets: [{ label: 'Batches', data: Object.values(data), backgroundColor: bg, borderRadius: 6, borderSkipped: false }] },
+    options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94a3b8' }, grid: { display: false } }, y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } } } }
+  });
+});
+
+// Wastage by Category
+fetchJSON('/api/chart/wastage-by-category').then(data => {
+  const labels = Object.keys(data);
+  const vals = Object.values(data);
+  const palette = ['#3B82F6','#8B5CF6','#14B8A6','#F59E0B','#EF4444','#22C55E','#F97316','#06B6D4','#EC4899','#84CC16'];
+  new Chart(document.getElementById('wastageBar'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Est. Wastage Units', data: vals, backgroundColor: palette.slice(0, labels.length), borderRadius: 6, borderSkipped: false }] },
+    options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94a3b8' }, grid: { display: false } }, y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } } } }
+  });
+});
+
+// Category Risk stacked bar
+fetchJSON('/api/chart/category-risk').then(data => {
+  const cats = Object.keys(data['High Risk'] || data[Object.keys(data)[0]] || {});
+  const riskTypes = Object.keys(data);
+  const colorMap = {'High Risk': CHART_COLORS.high, 'Medium Risk': CHART_COLORS.medium, 'Low Risk': CHART_COLORS.low};
+  const datasets = riskTypes.map(r => ({
+    label: r,
+    data: cats.map(c => data[r][c] || 0),
+    backgroundColor: colorMap[r] || CHART_COLORS.blue,
+    borderRadius: 4
+  }));
+  new Chart(document.getElementById('categoryRisk'), {
+    type: 'bar',
+    data: { labels: cats, datasets },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'DM Sans' } } } },
+      scales: { x: { stacked: true, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }, y: { stacked: true, ticks: { color: '#94a3b8' }, grid: { display: false } } }
+    }
+  });
+});
+</script>
+{% endblock %}

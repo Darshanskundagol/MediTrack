@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Reports — Meditrack{% endblock %}
+{% block page_title %}<i class="bi bi-bar-chart-fill me-2"></i>Analytics Reports{% endblock %}
+
+{% block content %}
+<div class="reports-layout">
+  <div class="reports-toolbar">
+    <a href="{{ url_for('reports.export_csv') }}" class="export-btn">
+      <i class="bi bi-file-earmark-spreadsheet"></i> Export Full CSV
+    </a>
+    <a href="{{ url_for('reports.export_alerts_csv') }}" class="export-btn export-btn-orange">
+      <i class="bi bi-bell-fill"></i> Export Expiry Alerts CSV
+    </a>
+  </div>
+
+  {% if report_data %}
+
+  <!-- Risk Summary -->
+  <div class="report-section">
+    <h4 class="report-section-title">Overall Risk Summary</h4>
+    <div class="risk-summary-row">
+      {% for level, count in report_data.risk_summary.items() %}
+      <div class="risk-sum-card risk-sum-{{ 'high' if 'High' in level else ('mid' if 'Medium' in level else 'low') }}">
+        <div class="rs-val">{{ count }}</div>
+        <div class="rs-label">{{ level }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Category Table -->
+  <div class="report-section">
+    <h4 class="report-section-title">Category-wise Risk Breakdown</h4>
+    <div class="table-responsive">
+      <table class="medi-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            {% for level in ['High Risk', 'Medium Risk', 'Low Risk'] %}
+            <th>{{ level }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in report_data.category_summary %}
+          <tr>
+            <td><strong>{{ row['Category'] }}</strong></td>
+            <td><span class="count-badge count-red">{{ row.get('High Risk', 0) }}</span></td>
+            <td><span class="count-badge count-orange">{{ row.get('Medium Risk', 0) }}</span></td>
+            <td><span class="count-badge count-green">{{ row.get('Low Risk', 0) }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Top Wastage Table -->
+  <div class="report-section">
+    <h4 class="report-section-title">Top 10 Estimated Wastage Items</h4>
+    <div class="table-responsive">
+      <table class="medi-table">
+        <thead>
+          <tr><th>Medicine</th><th>Category</th><th>Est. Wastage</th><th>Risk Level</th><th>Days Left</th></tr>
+        </thead>
+        <tbody>
+          {% for item in report_data.top_wastage %}
+          <tr>
+            <td>
+              <div class="med-name">{{ item['Medicine ID'] }}</div>
+              <div class="med-sub">{{ item.get('Medicine Name','') }}</div>
+            </td>
+            <td><span class="cat-badge">{{ item['Category'] }}</span></td>
+            <td><strong>{{ item['Est Wastage']|int }}</strong> units</td>
+            <td>
+              {% set rl = item['Risk Level'] %}
+              <span class="risk-badge risk-{{ 'high' if 'High' in rl else ('mid' if 'Medium' in rl else 'low') }}">{{ rl }}</span>
+            </td>
+            <td>{{ item['Days to Expiry']|int }} days</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-bar-chart text-muted" style="font-size:3rem"></i>
+    <p>No report data available. Run the ML model first.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

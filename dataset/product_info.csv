@@ -1,0 +1,21 @@
+Medicine ID,Medicine Name,Generic Name,Category,Manufacturer,Dosage Form,Strength,Shelf Life (days),Storage Condition,Prescription Required,MOQ,Unit Price (₹),Description
+MED001,Amoxicillin 500mg,Amoxicillin,Antibiotic,Cipla,Drops,10ml,365,Room Temp,No,63,232.29,Standard antibiotic medication
+MED002,Paracetamol 500mg,Paracetamol,Antipyretic,Dr. Reddy's,Syrup,10mg,730,Refrigerate,No,82,302.15,Standard antipyretic medication
+MED003,Ibuprofen 400mg,Ibuprofen,Analgesic,Sun Pharma,Capsule,100mg,730,Refrigerate,Yes,96,49.97,Standard analgesic medication
+MED004,Metformin 500mg,Metformin,Antidiabetic,Torrent Pharma,Drops,1000IU,730,Cool & Dry,No,63,143.85,Standard antidiabetic medication
+MED005,Amlodipine 5mg,Amlodipine,Antihypertensive,Cipla,Syrup,1000IU,1095,Room Temp,No,96,342.46,Standard antihypertensive medication
+MED006,Cetirizine 10mg,Cetirizine,Antihistamine,Torrent Pharma,Cream,10mg,730,Room Temp,Yes,60,492.38,Standard antihistamine medication
+MED007,Omeprazole 20mg,Omeprazole,Antacid,Sun Pharma,Tablet,50mg,730,Cool & Dry,Yes,27,384.44,Standard antacid medication
+MED008,Azithromycin 250mg,Azithromycin,Antibiotic,Abbott India,Syrup,250mg,365,Room Temp,No,65,96.09,Standard antibiotic medication
+MED009,Vitamin C 500mg,Vitamin,Vitamin,Alkem Labs,Cream,50mg,1825,Refrigerate,No,19,204.56,Standard vitamin medication
+MED010,Vitamin D3 1000IU,Vitamin,Vitamin,Sun Pharma,Injection,500mg,1825,Cool & Dry,Yes,50,292.12,Standard vitamin medication
+MED011,Fluconazole 150mg,Fluconazole,Antifungal,Alkem Labs,Drops,1000IU,730,Cool & Dry,Yes,61,20.22,Standard antifungal medication
+MED012,Acyclovir 400mg,Acyclovir,Antiviral,Zydus Cadila,Capsule,20ml,730,Cool & Dry,No,21,223.99,Standard antiviral medication
+MED013,Aspirin 75mg,Aspirin,Analgesic,Cipla,Capsule,1000IU,1095,Refrigerate,No,77,48.54,Standard analgesic medication
+MED014,Atorvastatin 10mg,Atorvastatin,Antihypertensive,Abbott India,Drops,5mg,1095,Room Temp,No,31,47.43,Standard antihypertensive medication
+MED015,Pantoprazole 40mg,Pantoprazole,Antacid,Cipla,Cream,10ml,730,Room Temp,No,54,366.42,Standard antacid medication
+MED016,Doxycycline 100mg,Doxycycline,Antibiotic,Dr. Reddy's,Capsule,250mg,365,Room Temp,No,35,95.01,Standard antibiotic medication
+MED017,Glibenclamide 5mg,Glibenclamide,Antidiabetic,Dr. Reddy's,Drops,250mg,730,Room Temp,No,69,379.68,Standard antidiabetic medication
+MED018,Losartan 50mg,Losartan,Antihypertensive,Torrent Pharma,Drops,20ml,1095,Refrigerate,No,90,164.91,Standard antihypertensive medication
+MED019,Loratadine 10mg,Loratadine,Antihistamine,Torrent Pharma,Tablet,400IU,730,Cool & Dry,No,45,299.8,Standard antihistamine medication
+MED020,Multivitamin Tab,Multivitamin,Vitamin,Zydus Cadila,Cream,250mg,1095,Cool & Dry,No,67,28.43,Standard vitamin medication

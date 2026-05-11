@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Alerts — Meditrack{% endblock %}
+{% block page_title %}<i class="bi bi-bell-fill me-2"></i>Expiry Alerts{% endblock %}
+
+{% block content %}
+<div class="alerts-layout">
+  <div class="alert-tabs-row" id="alertTabs">
+    <button class="alert-tab active" onclick="showTab('expiring')">
+      <i class="bi bi-clock-fill"></i> Expiring Soon
+      <span class="tab-count">{{ alerts_data.expiring_soon|length }}</span>
+    </button>
+    <button class="alert-tab" onclick="showTab('high_risk')">
+      <i class="bi bi-exclamation-octagon-fill"></i> High Risk
+      <span class="tab-count tab-red">{{ alerts_data.high_risk|length }}</span>
+    </button>
+    <button class="alert-tab" onclick="showTab('slow_moving')">
+      <i class="bi bi-graph-down-arrow"></i> Slow Moving
+      <span class="tab-count tab-amber">{{ alerts_data.slow_moving|length }}</span>
+    </button>
+  </div>
+
+  <!-- Expiring Soon -->
+  <div class="alert-panel" id="tab-expiring">
+    <div class="alert-panel-header">
+      <span>Medicines expiring within 90 days — prioritize for FEFO rotation</span>
+      <a href="{{ url_for('reports.export_alerts_csv') }}" class="export-btn">
+        <i class="bi bi-download"></i> Export
+      </a>
+    </div>
+    <div class="table-responsive">
+      <table class="medi-table">
+        <thead>
+          <tr><th>Medicine ID</th><th>Name</th><th>Category</th><th>Expiry Date</th><th>Days Left</th><th>Stock</th><th>Risk</th></tr>
+        </thead>
+        <tbody>
+          {% for item in alerts_data.expiring_soon %}
+          <tr>
+            <td class="med-name">{{ item['Medicine ID'] }}</td>
+            <td>{{ item.get('Medicine Name', '—') }}</td>
+            <td><span class="cat-badge">{{ item['Category'] }}</span></td>
+            <td>{{ item.get('Expiry Date', '—') }}</td>
+            <td>
+              {% set d = item['Days to Expiry']|int %}
+              <span class="days-badge {% if d <= 30 %}days-critical{% elif d <= 60 %}days-warn{% else %}days-ok{% endif %}">
+                {{ d }}d
+              </span>
+            </td>
+            <td>{{ item['Stock Quantity']|int }}</td>
+            <td>
+              {% set rl = item.get('Risk Level', 'Low Risk') %}
+              <span class="risk-badge risk-{{ 'high' if 'High' in rl else ('mid' if 'Medium' in rl else 'low') }}">{{ rl }}</span>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" class="text-center py-4 text-muted">No medicines expiring within 90 days 🎉</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- High Risk -->
+  <div class="alert-panel d-none" id="tab-high_risk">
+    <div class="alert-panel-header">
+      <span>High-risk medicines — immediate restocking / disposal action required</span>
+    </div>
+    <div class="table-responsive">
+      <table class="medi-table">
+        <thead>
+          <tr><th>Medicine ID</th><th>Category</th><th>Risk Score</th><th>Est. Wastage</th><th>Days Left</th></tr>
+        </thead>
+        <tbody>
+          {% for item in alerts_data.high_risk %}
+          <tr>
+            <td class="med-name">{{ item['Medicine ID'] }}</td>
+            <td><span class="cat-badge">{{ item['Category'] }}</span></td>
+            <td>
+              <div class="risk-score-wrap">
+                <div class="risk-score-bar risk-bar-high" style="width:{{ item['Expiry Risk Score']|round(0) }}%"></div>
+                <span>{{ "%.1f"|format(item['Expiry Risk Score']) }}</span>
+              </div>
+            </td>
+            <td><strong>{{ item['Est Wastage']|int }}</strong> units</td>
+            <td>{{ item['Days to Expiry']|int }}d</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-center py-4 text-muted">No high-risk medicines 🎉</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Slow Moving -->
+  <div class="alert-panel d-none" id="tab-slow_moving">
+    <div class="alert-panel-header">
+      <span>Slow-moving inventory — consider promotions or return-to-vendor</span>
+    </div>
+    <div class="table-responsive">
+      <table class="medi-table">
+        <thead>
+          <tr><th>Medicine ID</th><th>Category</th><th>Avg Daily Sales</th><th>Stock Qty</th><th>Days Left</th></tr>
+        </thead>
+        <tbody>
+          {% for item in alerts_data.slow_moving %}
+          <tr>
+            <td class="med-name">{{ item['Medicine ID'] }}</td>
+            <td><span class="cat-badge">{{ item['Category'] }}</span></td>
+            <td>{{ "%.1f"|format(item['Avg Daily Sales']) }}</td>
+            <td>{{ item['Stock Quantity']|int }}</td>
+            <td>{{ item['Days to Expiry']|int }}d</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-center py-4 text-muted">No slow-moving medicines found</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(name) {
+  document.querySelectorAll('.alert-panel').forEach(p => p.classList.add('d-none'));
+  document.querySelectorAll('.alert-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.remove('d-none');
+  event.currentTarget.classList.add('active');
+}
+</script>
+{% endblock %}

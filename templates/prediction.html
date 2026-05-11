@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}AI Prediction — Meditrack{% endblock %}
+{% block page_title %}<i class="bi bi-cpu-fill me-2"></i>AI Expiry Risk Prediction{% endblock %}
+
+{% block content %}
+<div class="prediction-layout">
+  <!-- Upload Card -->
+  <div class="upload-card">
+    <div class="upload-header">
+      <h3>Upload Inventory File</h3>
+      <p>Upload a CSV or XLSX file with your inventory data. The model will predict expiry risk and slow-moving medicines.</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+        <div class="drop-text">Drag & drop your file here</div>
+        <div class="drop-sub">or click to browse</div>
+        <input type="file" name="file" id="fileInput" accept=".csv,.xlsx" style="display:none">
+        <div class="file-info" id="fileInfo"></div>
+      </div>
+
+      <div class="required-cols">
+        <strong><i class="bi bi-info-circle"></i> Required column:</strong> <code>Expiry Date</code>
+        <br>
+        <strong>Optional (auto-defaulted):</strong> <code>Stock Quantity</code>, <code>Avg Daily Sales</code>, <code>Shelf Life (days)</code>
+      </div>
+
+      <button type="submit" class="btn-predict" id="submitBtn">
+        <i class="bi bi-lightning-charge-fill"></i> Run AI Prediction
+      </button>
+    </form>
+  </div>
+
+  {% if summary %}
+  <!-- Summary cards -->
+  <div class="pred-summary-grid">
+    <div class="pred-kpi pred-kpi-blue">
+      <div class="pred-kpi-val">{{ summary.total }}</div>
+      <div class="pred-kpi-label">Total Records</div>
+    </div>
+    <div class="pred-kpi pred-kpi-red">
+      <div class="pred-kpi-val">{{ summary.high_risk }}</div>
+      <div class="pred-kpi-label">High Risk</div>
+    </div>
+    <div class="pred-kpi pred-kpi-amber">
+      <div class="pred-kpi-val">{{ summary.slow_moving }}</div>
+      <div class="pred-kpi-label">Slow Moving</div>
+    </div>
+    <div class="pred-kpi pred-kpi-green">
+      <div class="pred-kpi-val">{{ summary.avg_risk_score }}</div>
+      <div class="pred-kpi-label">Avg Risk Score</div>
+    </div>
+  </div>
+
+  <!-- Results table -->
+  <div class="results-card">
+    <div class="chart-card-header" style="margin-bottom:1rem">
+      <span class="chart-title">Prediction Results (first 50 rows)</span>
+      <a href="{{ url_for('reports.export_csv') }}" class="see-all-link">
+        <i class="bi bi-download me-1"></i>Export Full CSV
+      </a>
+    </div>
+    <div class="table-responsive">
+      <table class="medi-table">
+        <thead>
+          <tr>
+            <th>Medicine</th>
+            <th>Category</th>
+            <th>Expiry Date</th>
+            <th>Days Left</th>
+            <th>Stock</th>
+            <th>Risk Score</th>
+            <th>Risk Level</th>
+            <th>Est. Wastage</th>
+            <th>Slow Moving</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in results %}
+          <tr>
+            <td>
+              <div class="med-name">{{ row.get('Medicine ID','—') }}</div>
+              <div class="med-sub">{{ row.get('Medicine Name','') }}</div>
+            </td>
+            <td><span class="cat-badge">{{ row.get('Category','—') }}</span></td>
+            <td>{{ row.get('Expiry Date','—') }}</td>
+            <td>
+              {% set d = row.get('Days to Expiry', 999)|float|int %}
+              <span class="days-badge {% if d <= 30 %}days-critical{% elif d <= 60 %}days-warn{% else %}days-ok{% endif %}">
+                {{ d }} days
+              </span>
+            </td>
+            <td>{{ row.get('Stock Quantity','—')|int }}</td>
+            <td>
+              {% set sc = row.get('Expiry Risk Score', 0)|float %}
+              <div class="risk-score-wrap">
+                <div class="risk-score-bar {% if sc >= 60 %}risk-bar-high{% elif sc >= 30 %}risk-bar-mid{% endif %}"
+                     style="width:{{ sc|round(0) }}%"></div>
+                <span>{{ "%.1f"|format(sc) }}</span>
+              </div>
+            </td>
+            <td>
+              {% set rl = row.get('Risk Level Pred','Low Risk') %}
+              <span class="risk-badge risk-{{ 'high' if rl == 'High Risk' else 'low' }}">{{ rl }}</span>
+            </td>
+            <td>{{ row.get('Est Wastage', 0)|int }}</td>
+            <td>
+              {% if row.get('Slow Moving Pred', 0) == 1 %}
+                <span class="slow-badge">Slow</span>
+              {% else %}
+                <span class="ok-badge">Normal</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const dz = document.getElementById('dropZone');
+const fi = document.getElementById('fileInput');
+const info = document.getElementById('fileInfo');
+
+dz.addEventListener('click', () => fi.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  if (e.dataTransfer.files.length) { fi.files = e.dataTransfer.files; showFile(fi.files[0]); }
+});
+fi.addEventListener('change', () => { if (fi.files.length) showFile(fi.files[0]); });
+
+function showFile(f) {
+  info.textContent = `📄 ${f.name} (${(f.size/1024).toFixed(1)} KB)`;
+  dz.classList.add('has-file');
+}
+
+document.getElementById('uploadForm').addEventListener('submit', () => {
+  const btn = document.getElementById('submitBtn');
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+  btn.disabled = true;
+});
+</script>
+{% endblock %}
